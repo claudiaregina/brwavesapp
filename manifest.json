@@ -1,8 +1,8 @@
 {
 "name": "Brazilian Waves",
   "short_name": "BRWaves",
-  "id": "/brwaves-app/",
-  "start_url": "/web-radio-app-1",
+  "id": "/brwavesapp/",
+  "start_url": "/brwavesapp/",
   "display": "standalone",
   "background_color": "#02292c",
   "theme_color": "#ececec",
