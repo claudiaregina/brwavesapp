@@ -1,8 +1,7 @@
 {
 "name": "Brazilian Waves",
   "short_name": "BRWaves",
-  "id": "/brwavesapp/",
-  "start_url": "/brwavesapp/",
+  "start_url": "https://claudiaregina.github.io/brwavesapp/",
   "display": "standalone",
   "background_color": "#02292c",
   "theme_color": "#ececec",
