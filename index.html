@@ -1,0 +1,72 @@
+<!doctype html>
+<html lang="pt-br">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+    <title>Brazilian Waves</title>
+    <link rel="stylesheet" href="style.css">
+    <link rel="manifest" href="manifest.json">
+    <link rel="icon" type="image/x-icon" href="favicon.ico">
+</head>
+<body>
+    <div class="container">
+        <h1><img src="logo.png" /></h1>
+        <button id="play-button" class="play">▶</button>
+    </div>
+
+    <script>
+        const audio = new Audio('https://s10.maxcast.com.br:9067/live');
+        let isPlaying = false;
+        const playButton = document.getElementById('play-button');
+
+        audio.play().then(() => {
+            isPlaying = true;
+            playButton.textContent = '❚❚';
+        }).catch((error) => {
+            reconnect();
+        });
+
+        function togglePlayPause() {
+            if (isPlaying) {
+                audio.pause();
+                isPlaying = false;
+                playButton.textContent = '▶';
+            } else {
+                playButton.textContent = '...';
+                audio.play().then(() => {
+                    isPlaying = true;
+                    playButton.textContent = '❚❚';
+                }).catch((error) => {
+                    reconnect();
+                });
+            }
+        }
+
+        function reconnect() {
+            playButton.textContent = '...';
+            setTimeout(() => {
+                audio.play().then(() => {
+                    isPlaying = true;
+                    playButton.textContent = '❚❚';
+                }).catch((error) => {
+                    reconnect();
+                });
+            }, 5000); // Retry every 5 seconds
+        }
+
+        document.addEventListener('DOMContentLoaded', () => {
+            playButton.addEventListener('click', togglePlayPause);
+        });
+
+        // Register the service worker
+        if ('serviceWorker' in navigator) {
+            window.addEventListener('load', () => {
+                navigator.serviceWorker.register('/service-worker.js').then(registration => {
+                }).catch(error => {
+                    console.log('ServiceWorker registration failed: ', error);
+                });
+            });
+        }
+    </script>
+</body>
+</html>

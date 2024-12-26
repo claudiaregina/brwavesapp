@@ -1,0 +1,13 @@
+{
+  "name": "web-radio-app",
+  "version": "1.0.0",
+  "description": "A simple web radio application that streams audio from a specified source.",
+  "main": "src/app.js",
+  "scripts": {
+    "start": "open src/index.html"
+  },
+  "dependencies": {},
+  "devDependencies": {},
+  "author": "",
+  "license": "MIT"
+}
