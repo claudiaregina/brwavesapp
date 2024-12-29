@@ -10,63 +10,192 @@
 </head>
 <body>
     <div class="container">
-        <h1><img src="logo.png" /></h1>
+        <h1><img src="logo.png" alt="Brazilian Waves" /></h1>
         <button id="play-button" class="play">▶</button>
+        <div id="status"></div>
     </div>
 
     <script>
-        const audio = new Audio('https://s10.maxcast.com.br:9067/live');
-        let isPlaying = false;
-        const playButton = document.getElementById('play-button');
+        class RadioPlayer {
+            constructor(streamUrl) {
+                this.audio = new Audio(streamUrl);
+                this.playButton = document.getElementById('play-button');
+                this.statusDiv = document.getElementById('status');
+                this.isPlaying = false;
+                this.reconnectAttempts = 0;
+                this.maxReconnectAttempts = 15;
+                this.reconnectTimeout = null;
+                this.reconnectDelay = 5000; // Fixed 5 second delay
+                
+                this.setupEventListeners();
+                this.setupNetworkListeners();
+                
+                this.autoplay();
+            }
 
-        audio.play().then(() => {
-            isPlaying = true;
-            playButton.textContent = '❚❚';
-        }).catch((error) => {
-            reconnect();
-        });
+            setupEventListeners() {
+                this.playButton.addEventListener('click', () => this.togglePlayPause());
+                this.attachAudioListeners(this.audio);
+            }
 
-        function togglePlayPause() {
-            if (isPlaying) {
-                audio.pause();
-                isPlaying = false;
-                playButton.textContent = '▶';
-            } else {
-                playButton.textContent = '...';
-                audio.play().then(() => {
-                    isPlaying = true;
-                    playButton.textContent = '❚❚';
-                }).catch((error) => {
-                    reconnect();
+            attachAudioListeners(audioElement) {
+                audioElement.addEventListener('error', (e) => {
+                    console.error('Audio error:', e);
+                    if (this.isPlaying) {
+                        this.scheduleReconnect();
+                    }
                 });
+
+                audioElement.addEventListener('playing', () => {
+                    this.reconnectAttempts = 0;
+                    this.isPlaying = true;
+                    this.updateUI('playing');
+                });
+
+                audioElement.addEventListener('stalled', () => {
+                    if (this.isPlaying) {
+                        this.scheduleReconnect();
+                    }
+                });
+
+                audioElement.addEventListener('ended', () => {
+                    if (this.isPlaying) {
+                        this.scheduleReconnect();
+                    }
+                });
+            }
+
+            setupNetworkListeners() {
+                window.addEventListener('online', () => {
+                    if (this.isPlaying) {
+                        this.scheduleReconnect();
+                    }
+                });
+
+                window.addEventListener('offline', () => {
+                    this.updateUI('offline');
+                });
+            }
+
+            async autoplay() {
+                this.updateUI('connecting');
+                try {
+                    await this.audio.play();
+                    this.isPlaying = true;
+                    this.updateUI('playing');
+                } catch (error) {
+                    console.error('Erro ao conectar (autoplay):', error);
+                    this.scheduleReconnect();
+                }
+            }
+
+            async togglePlayPause() {
+                if (this.isPlaying) {
+                    this.stopPlayback();
+                } else {
+                    this.updateUI('connecting');
+                    try {
+                        await this.audio.play();
+                    } catch (error) {
+                        console.error('Erro ao conectar:', error);
+                        this.scheduleReconnect();
+                    }
+                }
+            }
+
+            stopPlayback() {
+                this.audio.pause();
+                this.isPlaying = false;
+                this.updateUI('stopped');
+                if (this.reconnectTimeout) {
+                    clearTimeout(this.reconnectTimeout);
+                    this.reconnectTimeout = null;
+                }
+                this.reconnectAttempts = 0;  // Reset reconnect attempts when stopping
+            }
+
+            // New method to schedule reconnection
+            scheduleReconnect() {
+                if (this.reconnectTimeout) {
+                    clearTimeout(this.reconnectTimeout);
+                }
+                
+                if (this.reconnectAttempts >= this.maxReconnectAttempts) {
+                    this.updateUI('failed');
+                    return;
+                }
+
+                this.reconnectTimeout = setTimeout(() => {
+                    this.attemptReconnect();
+                }, this.reconnectDelay);
+                
+                this.updateUI('reconnecting');
+            }
+
+            async attemptReconnect() {
+                this.reconnectAttempts++;
+
+                const newAudio = new Audio(this.audio.src);
+                this.attachAudioListeners(newAudio);
+
+                try {
+                    await newAudio.play();
+                    this.audio.pause();
+                    this.audio = newAudio;
+                    this.isPlaying = true;
+                    this.updateUI('playing');
+                } catch (error) {
+                    console.error('Erro ao tentar reconectar:', error);
+                    this.scheduleReconnect();
+                }
+            }
+
+            updateUI(state) {
+                switch (state) {
+                    case 'playing':
+                        this.playButton.textContent = '❚❚';
+                        this.statusDiv.textContent = '';
+                        break;
+                    case 'stopped':
+                        this.playButton.textContent = '▶';
+                        this.statusDiv.textContent = '';
+                        break;
+                    case 'connecting':
+                        this.playButton.textContent = '...';
+                        this.statusDiv.textContent = 'Conectando...';
+                        break;
+                    case 'reconnecting':
+                        this.playButton.textContent = '...';
+                        this.statusDiv.textContent = `Reconectando (${this.reconnectAttempts}/${this.maxReconnectAttempts})...`;
+                        break;
+                    case 'failed':
+                        this.playButton.textContent = '▶';
+                        this.statusDiv.textContent = 'Erro na conexão. Tente novamente.';
+                        break;
+                    case 'offline':
+                        this.playButton.textContent = '...';
+                        this.statusDiv.textContent = 'Sem conexão. Verifique sua internet.';
+                        break;
+                }
             }
         }
 
-        function reconnect() {
-            playButton.textContent = '▶';
-            setTimeout(() => {
-                audio.play().then(() => {
-                    isPlaying = true;
-                    playButton.textContent = '❚❚';
-                }).catch((error) => {
-                    reconnect();
-                });
-            }, 5000); // Retry every 5 seconds
-        }
-
         document.addEventListener('DOMContentLoaded', () => {
-            playButton.addEventListener('click', togglePlayPause);
+            const player = new RadioPlayer('https://s10.maxcast.com.br:9067/live');
         });
 
-        // Register the service worker
         if ('serviceWorker' in navigator) {
             window.addEventListener('load', () => {
-                navigator.serviceWorker.register('/service-worker.js').then(registration => {
-                }).catch(error => {
-                    console.log('ServiceWorker registration failed: ', error);
-                });
+                navigator.serviceWorker.register('/service-worker.js')
+                    .then(registration => {
+                        console.log('ServiceWorker registered');
+                    })
+                    .catch(error => {
+                        console.error('ServiceWorker registration failed:', error);
+                    });
             });
         }
     </script>
 </body>
+
 </html>

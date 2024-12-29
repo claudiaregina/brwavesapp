@@ -25,3 +25,8 @@ body {
     cursor: pointer;
     transition: background-color 0.3s;
 }
+
+#status {
+    margin-top: 10px;
+    font-weight: solid;
+}
