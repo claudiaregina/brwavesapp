@@ -13,7 +13,7 @@ Ao ouvir a webradio enquanto dirigia, percebi que, quando a conexão caía, era 
 
 # Problemas
 
-Está bem simples. Não tem um fallback para uso no navegador (que bloqueia o autoplay). JS não é minha praia e não consegui fazer funcionar a mudança do botão quando está tentando reconectar. Mas serve ao propósito.
+Está bem simples. Não tem um fallback para uso no navegador (que bloqueia o autoplay).
 
 # Direitos
 
